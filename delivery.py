@@ -7,7 +7,8 @@ class MenuItem:
 
     def __init__(self, name: str, price: int):
         """Store the name and the price. The price goes through the setter, so it is checked."""
-        raise NotImplementedError("core: store the name, and set the price through the setter")
+        self.name = name
+        self.price = price
 
     @property
     def price(self) -> int:
@@ -17,28 +18,31 @@ class MenuItem:
     @price.setter
     def price(self, value: int) -> None:
         """Set the price. Raise ValueError if it is 0 or less, and keep the old price."""
-        raise NotImplementedError("core: check the new price, then store it in self._price")
+        if value <= 0:
+            raise ValueError
+        else:
+            self._price = value
 
     def __repr__(self) -> str:
         """Return the developer view, for example MenuItem('Pad Thai', 60)."""
-        raise NotImplementedError("core: return the developer view, ClassName('name', price)")
+        return f"MenuItem({self.name!r}, {self._price!r})"
 
     def __eq__(self, other: object) -> bool:
         """Two menu items are equal when their names and prices are equal."""
-        raise NotImplementedError("core: compare name and price, or return NotImplemented")
+        return self.name == other.name and self._price == other._price
 
     def cost(self, quantity: int) -> int:
         """Provided: what quantity of this dish costs, in baht."""
         return self.price * quantity
 
-
 class PromoItem(MenuItem):
     """A dish on a "buy 2, get 1 free" promotion: every third one is free."""
+    def __init__(self, name: str, price: int):
+        super().__init__(name, price)
 
     def cost(self, quantity: int) -> int:
         """Return what quantity costs when every third one is free."""
-        raise NotImplementedError("core: work out the free ones, then ask super() for the cost")
-
+        return (quantity - (quantity//3)) * self._price
 
 class Order:
     """One customer's delivery order: a list of (menu item, quantity) lines."""
@@ -48,24 +52,49 @@ class Order:
 
     def __init__(self, customer: str, lines: list[tuple[MenuItem, int]] | None = None):
         """Store the customer and a new list of lines. Never share a list with the caller or another order."""
-        raise NotImplementedError("core: store the customer and your own new list of lines")
+        self.customer = customer
+        self.lines = [] if lines is None else lines.copy()
 
     def add(self, item: MenuItem, quantity: int = 1) -> None:
         """Add one line. Raise ValueError if quantity is less than 1."""
-        raise NotImplementedError("core: check the quantity, then add the line")
+        if quantity < 1:
+            raise ValueError
+        self.lines.append((item, quantity))
 
     def total(self) -> int:
         """Return the food cost plus the delivery fee; free delivery from free_delivery_from; 0 if empty."""
-        raise NotImplementedError("core: ask each item for its cost, then add delivery")
+        if self.lines == []:
+            return 0
+        _total = 0
+        for item, quantity in self.lines:
+            _total += item.cost(quantity)
+        if _total > self.free_delivery_from:
+            return _total
+        else:
+            return _total + self.delivery_fee
 
     def summary(self) -> list[str]:
         """Return one text line per order line, for example "2 x Pad Thai"."""
-        raise NotImplementedError("core: build the summary lines with a list comprehension")
-
+        _summary = []
+        _item = {}
+        for item, quantity in self.lines:
+            if item.name in _item.keys():
+                _item[item.name] += quantity
+            else:
+                _item[item.name] = quantity
+        for item, quantity in _item.items():
+            _summary.append(f"{quantity} x {item}")
+        return _summary
 
 def cheapest(options: list) -> object | None:
     """Return the option with the smallest total(). First one wins a tie; None for an empty list.
 
     An option can be anything with a total() method, not only an Order.
     """
-    raise NotImplementedError("core: return the option whose total() is smallest")
+    _min = None
+    if options == []:
+        return None
+    for option in options:
+        if _min == None or _min.total() > option.total():
+            _min = option
+    return option
